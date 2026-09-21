@@ -3,6 +3,7 @@
 ## Boundaries
 
 - `src/importers.js`: Markdown, JSON, and JSONL parsing.
+- `src/adapters/`: source-specific collectors that translate public, verifiable local formats into the normalized contract. The first adapter covers Codex prompt history and optional session model metadata.
 - `src/repository.js`: repository evidence adapter. Platform-specific knowledge stays here.
 - `src/normalize.js`: platform-independent normalized session and observability states.
 - `src/rules/`: independent, extensible rules. Rules emit findings and never render reports.
@@ -28,7 +29,7 @@ This is the confidence boundary: only `known: []` may support a finding that som
 
 ## Extension points
 
-An importer parses a real format and passes records to `normalizeMany`. A new rule implements `{ id, category, analyze(context) }` and is registered in `RuleEngine`. Native adapters should only be added for public, verifiable data sources; the Core must not branch on IDE names.
+An importer parses an interchange format and passes records to `normalizeMany`. A native adapter owns platform-specific parsing, marks source limitations explicitly, and emits the same normalized sessions. A new rule implements `{ id, category, analyze(context) }` and is registered in `RuleEngine`. Native adapters should only be added for public, verifiable data sources; the Core must not branch on IDE names.
 
 ## Rework classification
 
