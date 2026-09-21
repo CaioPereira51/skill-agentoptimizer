@@ -23,37 +23,37 @@
     "id": "portuguese-generic-prompt",
     "origin": "synthetic",
     "sessions": [{ "id": "portuguese-generic-prompt", "prompts": ["corrija isso"] }],
-    "expectedFindingIds": ["prompt-quality:portuguese-generic-prompt:generic", "prompt-quality:portuguese-generic-prompt:unclear-objective"]
+    "expectedFindingIds": ["prompt-quality:portuguese-generic-prompt:generic"]
   },
   {
     "id": "english-scoped-validation",
     "origin": "synthetic",
     "sessions": [{ "id": "english-scoped-validation", "prompts": ["Update the parser without changing the public API. Done when npm test and npm run lint pass."] }],
-    "expectedFindingIds": ["prompt-quality:english-scoped-validation:unclear-objective"]
+    "expectedFindingIds": []
   },
   {
     "id": "portuguese-scoped-validation",
     "origin": "synthetic",
     "sessions": [{ "id": "portuguese-scoped-validation", "prompts": ["Implemente validação de carrinho sem alterar a API. Concluído quando os testes unitários passarem."] }],
-    "expectedFindingIds": ["prompt-quality:portuguese-scoped-validation:unclear-objective"]
+    "expectedFindingIds": []
   },
   {
     "id": "technical-short-prompt",
     "origin": "synthetic",
     "sessions": [{ "id": "technical-short-prompt", "prompts": ["Refactor auth."] }],
-    "expectedFindingIds": ["prompt-quality:technical-short-prompt:generic", "prompt-quality:technical-short-prompt:unclear-objective"]
+    "expectedFindingIds": ["prompt-quality:technical-short-prompt:generic"]
   },
   {
     "id": "mixed-phase-prompt",
     "origin": "synthetic",
     "sessions": [{ "id": "mixed-phase-prompt", "prompts": ["First inspect the failing tests, then propose a plan, implement the smallest fix, and run the suite. Done when all tests pass."] }],
-    "expectedFindingIds": ["prompt-quality:mixed-phase-prompt:constraints"]
+    "expectedFindingIds": []
   },
   {
     "id": "clarification-not-rework",
     "origin": "synthetic",
     "sessions": [{ "id": "clarification-not-rework", "prompts": ["What does this function do?"], "interactions": [{ "role": "user", "text": "What does this function do?" }, { "role": "assistant", "text": "It parses input." }, { "role": "user", "text": "Can you explain the edge case?" }] }],
-    "expectedFindingIds": ["prompt-quality:clarification-not-rework:unclear-objective", "prompt-quality:clarification-not-rework:generic"]
+    "expectedFindingIds": []
   },
   {
     "id": "observable-correction",
@@ -65,12 +65,90 @@
     "id": "context-unknown",
     "origin": "synthetic",
     "sessions": [{ "id": "context-unknown", "prompts": ["Review the API and report only actionable risks."], "observability": { "context": "unknown" } }],
-    "expectedFindingIds": ["prompt-quality:context-unknown:unclear-objective"]
+    "expectedFindingIds": []
   },
   {
     "id": "long-scoped-prompt",
     "origin": "synthetic",
     "sessions": [{ "id": "long-scoped-prompt", "prompts": ["Investigate the checkout timeout in src/payments, identify the smallest safe change, preserve existing retry semantics, add a regression test, and report the exact commands run. Done when the new test, npm test, and npm run typecheck pass."] }],
-    "expectedFindingIds": ["prompt-quality:long-scoped-prompt:constraints", "prompt-quality:long-scoped-prompt:mixed-phases"]
+    "expectedFindingIds": []
+  },
+  {
+    "id": "missing-objective",
+    "origin": "synthetic",
+    "sessions": [{ "id": "missing-objective", "prompts": [""] }],
+    "expectedFindingIds": ["prompt-quality:missing-objective:missing-objective"]
+  },
+  {
+    "id": "english-update-short",
+    "origin": "synthetic",
+    "sessions": [{ "id": "english-update-short", "prompts": ["Update it."] }],
+    "expectedFindingIds": ["prompt-quality:english-update-short:generic"]
+  },
+  {
+    "id": "portuguese-update-short",
+    "origin": "synthetic",
+    "sessions": [{ "id": "portuguese-update-short", "prompts": ["Atualize isto."] }],
+    "expectedFindingIds": ["prompt-quality:portuguese-update-short:generic"]
+  },
+  {
+    "id": "no-action-or-objective",
+    "origin": "synthetic",
+    "sessions": [{ "id": "no-action-or-objective", "prompts": ["The checkout timeout."] }],
+    "expectedFindingIds": ["prompt-quality:no-action-or-objective:unclear-objective", "prompt-quality:no-action-or-objective:generic"]
+  },
+  {
+    "id": "question-with-target",
+    "origin": "synthetic",
+    "sessions": [{ "id": "question-with-target", "prompts": ["How does this endpoint authenticate requests?"] }],
+    "expectedFindingIds": []
+  },
+  {
+    "id": "portuguese-question-with-target",
+    "origin": "synthetic",
+    "sessions": [{ "id": "portuguese-question-with-target", "prompts": ["Como esta função trata entradas vazias?"] }],
+    "expectedFindingIds": []
+  },
+  {
+    "id": "missing-acceptance",
+    "origin": "synthetic",
+    "sessions": [{ "id": "missing-acceptance", "prompts": ["Refactor the payment authorization module while preserving its public API and existing retry behavior."] }],
+    "expectedFindingIds": ["prompt-quality:missing-acceptance:acceptance"]
+  },
+  {
+    "id": "portuguese-migration",
+    "origin": "synthetic",
+    "sessions": [{ "id": "portuguese-migration", "prompts": ["Migre o endpoint para a nova API sem alterar o contrato público. Concluído quando os testes de integração passarem."] }],
+    "expectedFindingIds": []
+  },
+  {
+    "id": "english-debug",
+    "origin": "synthetic",
+    "sessions": [{ "id": "english-debug", "prompts": ["Debug the cache miss without modifying production behavior. Done when the regression test passes."] }],
+    "expectedFindingIds": []
+  },
+  {
+    "id": "contradictory-request",
+    "origin": "synthetic",
+    "sessions": [{ "id": "contradictory-request", "prompts": ["Do not change code, but implement the parser fix."] }],
+    "expectedFindingIds": ["prompt-quality:contradictory-request:contradiction"]
+  },
+  {
+    "id": "phased-investigation",
+    "origin": "synthetic",
+    "sessions": [{ "id": "phased-investigation", "prompts": ["First investigate the error. Then implement the smallest safe fix and run tests. Done when the test suite passes."] }],
+    "expectedFindingIds": []
+  },
+  {
+    "id": "document-request",
+    "origin": "synthetic",
+    "sessions": [{ "id": "document-request", "prompts": ["Document the public API without changing behavior. Done when links validate."] }],
+    "expectedFindingIds": []
+  },
+  {
+    "id": "portuguese-review",
+    "origin": "synthetic",
+    "sessions": [{ "id": "portuguese-review", "prompts": ["Revise o diff e reporte apenas riscos acionáveis."] }],
+    "expectedFindingIds": []
   }
 ]

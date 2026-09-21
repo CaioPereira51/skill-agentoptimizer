@@ -64,6 +64,22 @@ test("already automated workflows do not produce duplicate automation work", () 
   assert.equal(audit.candidateArtifacts.length, 0);
 });
 
+test("automation aliases associate skill evidence with a workflow family", () => {
+  const sessions = [
+    normalizeSession({ id: "a", prompts: ["Review the diff"], automationEvidence: [{ pattern: "implementation-review", automated: true }] }),
+    normalizeSession({ id: "b", prompts: ["Review the diff"], automationEvidence: [{ pattern: "implementation-review", automated: true }] })
+  ];
+  const audit = new AgentOptimizer().analyze(sessions).audit;
+  assert.equal(audit.patterns.find((pattern) => pattern.pattern === "review-diff").automationState.value, true);
+  assert.equal(audit.automationOpportunities.length, 0);
+});
+
+test("candidate artifacts retain verification status for unknown automation", () => {
+  const sessions = ["a", "b", "c"].map((id) => normalizeSession({ id, prompts: ["Investigate the cause; do not implement code"] }));
+  const audit = new AgentOptimizer().analyze(sessions).audit;
+  assert.equal(audit.candidateArtifacts[0].verificationRequired, true);
+});
+
 test("legacy context metric histories compare with lexical alignment", () => {
   const previous = { metrics: [{ id: "context_efficiency", value: 50 }] };
   const current = { metrics: [{ id: "context_lexical_alignment", value: 60 }] };

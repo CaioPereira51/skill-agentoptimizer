@@ -17,6 +17,25 @@ test("well-scoped prompt avoids generic and missing-acceptance findings", () => 
   assert.equal(audit.findings.filter((item) => item.category === "prompt_quality").length, 0);
 });
 
+test("objective detection recognizes common English and Portuguese action forms", () => {
+  const prompts = [
+    "Update the parser without changing the public API. Done when tests pass.",
+    "Implemente validação de carrinho sem alterar a API. Concluído quando os testes passarem.",
+    "Atualize o endpoint sem alterar o contrato. Concluído quando os testes passarem.",
+    "Revise o diff e reporte riscos acionáveis.",
+    "How does this function treat empty input?"
+  ];
+  for (const [index, prompt] of prompts.entries()) {
+    const audit = analyze({ id: `objective-${index}`, prompts: [prompt] });
+    assert.equal(audit.findings.some((item) => item.id.includes("unclear-objective")), false, prompt);
+  }
+});
+
+test("a short question with a concrete target is not generic", () => {
+  const audit = analyze({ id: "question", prompts: ["What does this function do?"] });
+  assert.equal(audit.findings.filter((item) => item.ruleId === "prompt-quality").length, 0);
+});
+
 test("prompt-quality rules evaluate multiple prompts independently", () => {
   const audit = analyze({ id: "turns", prompts: [
     "Investigate the cache failure without changing code. Return the cause and supporting evidence.",

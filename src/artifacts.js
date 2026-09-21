@@ -9,6 +9,7 @@ export function generateCandidateArtifacts(patterns, { minimumOccurrences = 3 } 
     description: `Reusable ${pattern.suggestedAbstraction} candidate derived from ${pattern.occurrences} observed occurrences.`,
     recurrence: pattern.occurrences,
     confidence: pattern.confidence,
+    verificationRequired: valueOf(pattern.automationState) !== false,
     evidence: pattern.examples
   }));
 }

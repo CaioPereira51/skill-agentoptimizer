@@ -9,6 +9,20 @@ const workflowFamilies = [
   { id: "repository-audit", regex: /investigue o repositório|inspect (?:the )?repository|analise o projeto/i, abstraction: "Command" }
 ];
 
+const automationAliases = new Map([
+  ["implementation-review", "review-diff"], ["code-review", "review-diff"], ["review", "review-diff"],
+  ["validation", "validate-before-finish"], ["test-validation", "validate-before-finish"],
+  ["investigation", "investigate-only"], ["diagnostic", "investigate-only"],
+  ["specification", "spec-first"], ["repository-review", "repository-audit"]
+]);
+
+export function canonicalAutomationPattern(pattern) {
+  const normalized = String(pattern ?? "").trim().toLowerCase();
+  if (!normalized) return undefined;
+  if (workflowFamilies.some((family) => family.id === normalized)) return normalized;
+  return automationAliases.get(normalized);
+}
+
 export function detectPatterns(sessions, minimumOccurrences = 2) {
   const patterns = [];
   for (const family of workflowFamilies) {
@@ -20,7 +34,7 @@ export function detectPatterns(sessions, minimumOccurrences = 2) {
       const observedStates = sessions.flatMap((session) => {
         const field = session.fields.automationEvidence;
         if (!isKnown(field)) return [];
-        return valueOf(field, []).filter((item) => item?.pattern === family.id && typeof item.automated === "boolean").map((item) => item.automated);
+        return valueOf(field, []).filter((item) => canonicalAutomationPattern(item?.pattern) === family.id && typeof item.automated === "boolean").map((item) => item.automated);
       });
       const distinctStates = [...new Set(observedStates)];
       const automationState = distinctStates.length === 1

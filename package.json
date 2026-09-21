@@ -42,7 +42,8 @@
     "lint": "node scripts/lint.js",
     "typecheck": "node scripts/typecheck.js",
     "build": "node scripts/build.js",
-    "verify": "npm test && npm run lint && npm run typecheck && npm run build",
+    "eval": "node bin/agent-optimizer.js eval --fixtures eval/fixtures.json",
+    "verify": "npm test && npm run eval && npm run lint && npm run typecheck && npm run build",
     "prepack": "npm run verify"
   },
   "publishConfig": {

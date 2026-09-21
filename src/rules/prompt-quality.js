@@ -1,8 +1,9 @@
 import { Confidence, Priority, valueOf } from "../domain.js";
 import { evidence, finding, hasKnown } from "./helpers.js";
 
-const objectiveTerms = /\b(implementar|criar|corrigir|analisar|investigar|refatorar|documentar|build|fix|create|analy[sz]e|investigate|implement)\b/i;
-const constraintTerms = /\b(não|sem|deve|somente|apenas|limite|restri|must|shall|without|only|avoid)\b/i;
+const objectiveTerms = /\b(?:implement(?:ar|e|em|ado|ing)?|cria(?:r|r|e|do)?|corrig(?:ir|a|e|ido)?|corrija|atualiz(?:ar|e|ado)?|adicion(?:ar|e|ado)?|remov(?:er|a|ido)?|alter(?:ar|e|ado)?|revis(?:ar|e|ado)?|explic(?:ar|e|ado)?|migr(?:ar|e|ado)?|otimiz(?:ar|e|ado)?|refator(?:ar|e|ado)?|document(?:ar|e|ed|ing)?|analis(?:ar|e|ado)?|investig(?:ar|ue|ate|ated|ating)?|diagnos(?:ticar|e|ed|ing)?|build|fix|create|change|update|add|remove|review|explain|migrate|optimize|refactor|debug|inspect|analy[sz]e)\b/i;
+const questionObjectiveTerms = /\b(?:what|how|why|which|where|quando|como|por que|qual|quais|onde)\b.*\b(?:function|função|file|arquivo|api|endpoint|component|componente|code|código)\b/i;
+const constraintTerms = /\b(?:não|sem|deve|somente|apenas|limite\w*|restri\w*|preserv\w*|menor|segur[oa]|must|shall|without|only|avoid|preserve|smallest|safe|compatible)\b/i;
 const acceptanceTerms = /\b(critérios? de aceite|considerad[oa] (?:pront[oa]|concluíd[oa])|acceptance criteria|done when|validar|testes?|tests?|build|lint|typecheck)\b/i;
 
 function repeatedLines(prompt) {
@@ -32,7 +33,8 @@ export const promptQualityRule = {
         }));
         continue;
       }
-      if (!objectiveTerms.test(prompt)) findings.push(finding(session, this.id, {
+      const hasObjective = objectiveTerms.test(prompt) || questionObjectiveTerms.test(prompt);
+      if (!hasObjective) findings.push(finding(session, this.id, {
         suffix: suffix("unclear-objective"), category: this.category, title: "Objetivo pouco explícito",
         description: "O prompt não contém uma ação ou objetivo identificável pelas heurísticas rastreáveis.",
         evidence: [evidence(session, "prompts", prompt)],
@@ -44,7 +46,7 @@ export const promptQualityRule = {
         evidence: [evidence(session, "prompts", prompt)],
         recommendation: "Declare apenas restrições relevantes: escopo, compatibilidade, ações proibidas ou limites de dependência.", confidence: Confidence.MEDIUM
       }));
-      if (prompt.length < 45 && !constraintTerms.test(prompt) && !acceptanceTerms.test(prompt)) findings.push(finding(session, this.id, {
+      if (prompt.length < 45 && !constraintTerms.test(prompt) && !acceptanceTerms.test(prompt) && !questionObjectiveTerms.test(prompt)) findings.push(finding(session, this.id, {
         suffix: suffix("generic"), category: this.category, severity: Priority.HIGH, title: "Prompt excessivamente genérico",
         description: "O prompt é curto e não contém restrições nem critérios verificáveis.", evidence: [evidence(session, "prompts", prompt)],
         recommendation: "Inclua escopo, restrições relevantes e um critério observável de conclusão.", confidence: Confidence.HIGH
@@ -76,8 +78,8 @@ export const promptQualityRule = {
         recommendation: "Adicione critérios de aceite proporcionais ao tipo da tarefa.", confidence: Confidence.MEDIUM
       }));
       const investigate = /\b(investig|analise|diagnos)/i.test(prompt);
-      const implement = /\b(implemente|altere|corrija|crie|implement|change|fix|create)\b/i.test(prompt);
-      const phaseBoundary = /\b(agora|depois|em seguida|antes de|fase|now|then|after|before)\b/i.test(prompt);
+      const implement = /\b(implemente|altere|corrija|crie|implement|fix|create)\b/i.test(prompt);
+      const phaseBoundary = /\b(primeiro|agora|depois|em seguida|antes de|fase|first|now|then|after|before)\b/i.test(prompt);
       const contradiction = (/(?:não\s+(?:altere|implemente)(?:\s+(?:o\s+)?código)?|do not\s+(?:change|implement)(?:\s+code)?|without\s+code\s+changes)/i.test(prompt) && implement)
         || (/(?:não|do not|skip)\s+(?:execute|run|rode)?\s*(?:test|teste)/i.test(prompt) && /(?:execute|run|rode)\s+(?:os?\s+)?(?:test|teste)/i.test(prompt));
       if (contradiction && !phaseBoundary) findings.push(finding(session, this.id, {

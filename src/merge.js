@@ -48,6 +48,8 @@ function uniqueArray(values) {
 function mergeField(key, fields) {
   const knownFields = fields.filter((field) => field?.status === Availability.KNOWN);
   if (!knownFields.length) {
+    const uncertain = fields.find((field) => field?.status === Availability.UNKNOWN);
+    if (uncertain) return uncertain;
     const unavailable = fields.find((field) => field?.status === Availability.UNAVAILABLE);
     return unavailable ?? fields.find(Boolean) ?? unknown("no merged source provided this field");
   }

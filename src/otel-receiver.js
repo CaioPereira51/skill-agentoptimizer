@@ -7,6 +7,7 @@ import { AgentOptimizer } from "./optimizer.js";
 import { FileHistoryStore } from "./history.js";
 import { importOtlpTraces } from "./adapters/otlp.js";
 import { importCursorOtlp } from "./adapters/cursor-otel.js";
+import { mergeSessions } from "./merge.js";
 
 const unzip = promisify(gunzip);
 
@@ -32,10 +33,40 @@ export async function startOtlpReceiver({
   historyDir = ".agentoptimizer",
   rawDir,
   maxBytes = 64 * 1024 * 1024,
+  cursorBufferMs = 15_000,
   optimizer = new AgentOptimizer()
 } = {}) {
   const store = new FileHistoryStore(historyDir);
   let sequence = 0;
+  const cursorBuffers = new Map();
+
+  async function persist(sessions) {
+    const previousAudits = await store.list();
+    const result = optimizer.analyze(sessions, { previousAudits });
+    await store.save(result.audit, result.markdown);
+  }
+
+  async function flushCursorConversation(id) {
+    const buffered = cursorBuffers.get(id);
+    if (!buffered) return;
+    cursorBuffers.delete(id);
+    clearTimeout(buffered.timer);
+    await persist(mergeSessions(buffered.sessions));
+  }
+
+  function bufferCursorSessions(sessions) {
+    for (const session of sessions) {
+      const id = session.fields.session?.value;
+      if (id == null) continue;
+      const key = String(id);
+      const buffered = cursorBuffers.get(key) ?? { sessions: [], timer: undefined };
+      buffered.sessions.push(session);
+      clearTimeout(buffered.timer);
+      buffered.timer = setTimeout(() => { void flushCursorConversation(key).catch(() => {}); }, cursorBufferMs);
+      cursorBuffers.set(key, buffered);
+    }
+  }
+
   const server = createServer(async (request, response) => {
     try {
       if (request.method !== "POST" || !["/v1/traces", "/v1/logs", "/v1/metrics"].includes(request.url)) {
@@ -52,13 +83,18 @@ export async function startOtlpReceiver({
         await mkdir(resolve(rawDir), { recursive: true });
         await writeFile(resolve(rawDir, `${request.url.slice(4)}-${Date.now()}-${++sequence}.json`), `${JSON.stringify(document, null, 2)}\n`, "utf8");
       }
-      const sessions = request.url === "/v1/traces" ? importOtlpTraces(document) : importCursorOtlp(document);
+      const isTrace = request.url === "/v1/traces";
+      const sessions = isTrace ? importOtlpTraces(document) : importCursorOtlp(document);
       if (!sessions.length) throw new Error(`OTLP payload contained no auditable ${request.url.slice(4)} records with cursor.conversation.id`);
-      const previousAudits = await store.list();
-      const result = optimizer.analyze(sessions, { previousAudits });
-      await store.save(result.audit, result.markdown);
-      response.writeHead(200, { "content-type": "application/json" });
-      response.end("{}");
+      if (isTrace) {
+        await persist(sessions);
+        response.writeHead(200, { "content-type": "application/json" });
+        response.end("{}");
+      } else {
+        bufferCursorSessions(sessions);
+        response.writeHead(202, { "content-type": "application/json" });
+        response.end(JSON.stringify({ buffered: sessions.length, flushAfterMs: cursorBufferMs }));
+      }
     } catch (error) {
       response.writeHead(error.statusCode ?? 400, { "content-type": "application/json" });
       response.end(JSON.stringify({ error: error.message }));
@@ -72,6 +108,9 @@ export async function startOtlpReceiver({
   return {
     server,
     url: `http://${host}:${address.port}`,
-    close: () => new Promise((resolveClose, reject) => server.close((error) => error ? reject(error) : resolveClose()))
+    close: async () => {
+      await Promise.all([...cursorBuffers.keys()].map((id) => flushCursorConversation(id)));
+      await new Promise((resolveClose, reject) => server.close((error) => error ? reject(error) : resolveClose()));
+    }
   };
 }

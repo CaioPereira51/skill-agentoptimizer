@@ -77,6 +77,15 @@ test("time-window merge joins adjacent timestamps rather than fixed buckets", ()
   assert.equal(merged.fields.usage.value.inputTokens, 4);
 });
 
+test("merge keeps unknown when another source marks the field unavailable", () => {
+  const sessions = [
+    normalizeSession({ id: "one", tool: "codex", session: "s1", cost: undefined, observability: { cost: "unknown" } }),
+    normalizeSession({ id: "two", tool: "codex", session: "s1", observability: { cost: "unavailable" } })
+  ];
+  const [merged] = mergeSessions(sessions);
+  assert.equal(merged.fields.cost.status, "unknown");
+});
+
 test("live OTLP receiver persists an auditable trace", async () => {
   const root = await mkdtemp(join(tmpdir(), "agent-optimizer-otel-"));
   const receiver = await startOtlpReceiver({ port: 0, historyDir: root, rawDir: join(root, "raw") });
@@ -86,6 +95,22 @@ test("live OTLP receiver persists an auditable trace", async () => {
     const audits = await new (await import("../src/history.js")).FileHistoryStore(root).list();
     assert.equal(audits.length, 1);
     assert.equal(audits[0].sessionEvidence[0].source, "otlp");
+  } finally { await receiver.close(); }
+});
+
+test("live Cursor OTLP buffers logs and metrics by conversation before auditing", async () => {
+  const root = await mkdtemp(join(tmpdir(), "agent-optimizer-cursor-otel-"));
+  const receiver = await startOtlpReceiver({ port: 0, historyDir: root, cursorBufferMs: 15 });
+  const logs = { resourceLogs: [{ scopeLogs: [{ logRecords: [{ body: { stringValue: "skill.activated" }, attributes: [{ key: "cursor.conversation.id", value: { stringValue: "c1" } }, { key: "skill.activated", value: { boolValue: true } }] }] }] }] };
+  const metrics = { resourceMetrics: [{ scopeMetrics: [{ metrics: [{ name: "cursor.token.usage.input", sum: { dataPoints: [{ asInt: "9", attributes: [{ key: "cursor.conversation.id", value: { stringValue: "c1" } }] }] } }] }] }] };
+  try {
+    const headers = { "content-type": "application/json" };
+    assert.equal((await fetch(`${receiver.url}/v1/logs`, { method: "POST", headers, body: JSON.stringify(logs) })).status, 202);
+    assert.equal((await fetch(`${receiver.url}/v1/metrics`, { method: "POST", headers, body: JSON.stringify(metrics) })).status, 202);
+    await new Promise((resolve) => setTimeout(resolve, 60));
+    const audits = await new (await import("../src/history.js")).FileHistoryStore(root).list();
+    assert.equal(audits.length, 1);
+    assert.equal(audits[0].sessionEvidence[0].fields.usage.value.inputTokens, 9);
   } finally { await receiver.close(); }
 });
 
