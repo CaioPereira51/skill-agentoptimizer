@@ -1,0 +1,20 @@
+{
+  "name": "agent-optimizer",
+  "version": "0.1.0",
+  "description": "Evidence-based audits for AI-assisted development workflows",
+  "type": "module",
+  "bin": {
+    "agent-optimizer": "./bin/agent-optimizer.js"
+  },
+  "exports": "./src/index.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test",
+    "lint": "node scripts/lint.js",
+    "typecheck": "node scripts/typecheck.js",
+    "build": "node scripts/build.js"
+  },
+  "license": "MIT"
+}

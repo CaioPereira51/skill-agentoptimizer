@@ -1,0 +1,36 @@
+{
+  "sessions": [
+    {
+      "id": "task-1",
+      "tool": "example-agent",
+      "task": "Add validation to checkout",
+      "prompts": ["Implement checkout validation. Run unit tests and review the diff. Done when invalid carts are rejected."],
+      "context": ["src/checkout.js checkout validation cart", "test/checkout.test.js invalid cart"],
+      "filesRead": ["src/checkout.js", "test/checkout.test.js"],
+      "filesChanged": ["src/checkout.js", "test/checkout.test.js"],
+      "testsExecuted": ["unit tests: passed"],
+      "validation": ["diff review: passed"],
+      "specArtifacts": [{"type": "PRD", "content": "Problem, objective, functional requirements, acceptance criteria"}],
+      "interactions": ["user: implement", "assistant: completed", "user: accepted"],
+      "operations": ["read", "read", "edit", "test", "review"],
+      "result": "success",
+      "timestamp": "2026-09-20T12:00:00Z"
+    },
+    {
+      "id": "task-2",
+      "tool": "example-agent",
+      "task": "Fix bug",
+      "prompts": ["fix it"],
+      "context": [],
+      "filesRead": [],
+      "filesChanged": ["src/cart.js"],
+      "testsExecuted": [],
+      "validation": [],
+      "specArtifacts": [],
+      "interactions": ["user: fix it", "assistant: done", "user: não era isso, corrija", "assistant: corrected", "user: accepted"],
+      "operations": ["edit", "edit"],
+      "result": "success",
+      "timestamp": "2026-09-21T12:00:00Z"
+    }
+  ]
+}

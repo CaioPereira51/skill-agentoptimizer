@@ -1,0 +1,5 @@
+node_modules/
+.agentoptimizer/
+graphify-out/
+coverage/
+dist/
