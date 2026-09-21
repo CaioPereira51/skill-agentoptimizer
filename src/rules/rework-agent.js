@@ -15,7 +15,7 @@ export const reworkRule = {
         title: classification.status === ReworkStatus.MULTIPLE_REWORKS ? "Múltiplos ciclos de retrabalho" : "Um ciclo de retrabalho",
         description: `${classification.corrections} sinal(is) de correção foram observados na sequência de interações.`,
         evidence: [evidence(session, "interactions", `${classification.corrections} correction signals`) ],
-        recommendation: "Revise a causa associada (prompt, contexto, especificação, implementação ou validação) antes da próxima tentativa.", confidence: Confidence.MEDIUM
+        recommendation: "Revise as hipóteses sustentadas por evidência (prompt, contexto, especificação, implementação ou validação) antes da próxima tentativa.", confidence: classification.confidence ?? Confidence.MEDIUM
       })];
     });
   }

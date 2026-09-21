@@ -7,6 +7,23 @@ export const ReworkStatus = Object.freeze({
   MULTIPLE_REWORKS: "multiple_reworks",
   UNKNOWN: "unknown"
 });
+export const InteractionType = Object.freeze({
+  REQUEST: "request",
+  AGENT_RESPONSE: "agent_response",
+  CLARIFICATION: "clarification",
+  CORRECTION: "correction",
+  IMPLEMENTATION: "implementation",
+  VALIDATION: "validation",
+  ACCEPTANCE: "acceptance",
+  ROLLBACK: "rollback",
+  ABANDONMENT: "abandonment",
+  UNKNOWN: "unknown"
+});
+export const HypothesisSupport = Object.freeze({
+  SUPPORTED: "SUPPORTED",
+  POSSIBLE: "POSSIBLE",
+  INSUFFICIENT_DATA: "INSUFFICIENT_DATA"
+});
 
 export function known(value) {
   return { status: Availability.KNOWN, value };

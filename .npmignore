@@ -1,0 +1,8 @@
+.agentoptimizer/
+.validation-history/
+.github/
+.gitignore
+graphify-out/
+node_modules/
+test/
+scripts/

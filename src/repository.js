@@ -31,16 +31,16 @@ async function readSmall(root, file) {
   return readFile(full, "utf8");
 }
 
-function inferValidations(packageText, files) {
-  const validations = [];
+function inferValidationCapabilities(packageText, files) {
+  const capabilities = [];
   if (packageText) {
     try {
       const scripts = JSON.parse(packageText).scripts ?? {};
-      for (const name of ["test", "lint", "typecheck", "build", "e2e"]) if (scripts[name]) validations.push(`available:${name}`);
+      for (const name of ["test", "lint", "typecheck", "build", "e2e"]) if (scripts[name]) capabilities.push(name);
     } catch { /* invalid package is evidence only through warning */ }
   }
-  if (files.some((file) => TEST_NAMES.test(file))) validations.push("tests-present");
-  return validations;
+  if (files.some((file) => TEST_NAMES.test(file))) capabilities.push("tests-present");
+  return capabilities;
 }
 
 export async function collectRepositorySession(rootPath = process.cwd()) {
@@ -61,22 +61,34 @@ export async function collectRepositorySession(rootPath = process.cwd()) {
     id: `repository-${now}`,
     tool: "repository",
     session: branch || undefined,
-    task: "Repository evidence audit",
-    context: files,
-    filesRead: [...specFiles, ...configFiles, ...testFiles],
-    filesChanged: changed,
-    testsExecuted: undefined,
-    specArtifacts,
-    validation: inferValidations(packageText, files),
+    repositoryInventory: files,
+    repositoryChanges: changed,
+    repositorySpecArtifacts: specArtifacts,
+    repositoryHistory: commits ? commits.split(/\r?\n/) : [],
+    validationCapabilities: inferValidationCapabilities(packageText, files),
     timestamp: now,
-    result: commits ? { recentCommits: commits.split(/\r?\n/) } : undefined,
     observability: {
-      prompts: "unavailable", commands: "unavailable", interactions: "unavailable", model: "unavailable",
-      cost: "unavailable", operations: "unavailable", testsExecuted: "unknown"
+      task: "unavailable", prompts: "unavailable", context: "unavailable", commands: "unavailable",
+      filesRead: "unavailable", filesChanged: "unavailable", testsExecuted: "unavailable",
+      result: "unavailable", interactions: "unavailable", model: "unavailable", cost: "unavailable",
+      specArtifacts: "unavailable", validation: "unavailable", operations: "unavailable"
     },
     evidence: [
       { type: "repository", location: root },
       { type: "inventory", files: files.length, specs: specFiles.length, tests: testFiles.length, configs: configFiles.length }
     ]
-  }, { source: "repository", format: "repository", limitations: { testsExecuted: "Repository state cannot prove which validations ran in a past AI session." } });
+  }, {
+    source: "repository",
+    format: "repository",
+    limitations: {
+      task: "Repository state does not identify an AI task.",
+      context: "Repository inventory does not prove which context was supplied to an agent.",
+      filesRead: "Discovered repository files are not evidence that an agent read them.",
+      filesChanged: "Current Git changes are repository state, not proven agent changes.",
+      testsExecuted: "Validation capability does not prove execution.",
+      result: "Repository state does not expose an agent outcome.",
+      specArtifacts: "Discovered specification files do not prove use in an AI task.",
+      validation: "Repository state cannot prove which validations ran in a past AI session."
+    }
+  });
 }

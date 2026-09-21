@@ -17,6 +17,14 @@ test("well-scoped prompt avoids generic and missing-acceptance findings", () => 
   assert.equal(audit.findings.filter((item) => item.category === "prompt_quality").length, 0);
 });
 
+test("prompt-quality rules evaluate multiple prompts independently", () => {
+  const audit = analyze({ id: "turns", prompts: [
+    "Investigate the cache failure without changing code. Return the cause and supporting evidence.",
+    "Now implement the smallest fix and run the relevant tests."
+  ] });
+  assert.equal(audit.findings.filter((item) => item.id.includes("mixed-phases")).length, 0);
+});
+
 test("unknown prompts do not create prompt findings", () => {
   const audit = analyze({ id: "p" });
   assert.equal(audit.findings.filter((item) => item.category === "prompt_quality").length, 0);

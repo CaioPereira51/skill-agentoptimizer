@@ -3,10 +3,17 @@ import { known, unknown, unavailable, Availability } from "./domain.js";
 const OBSERVABLE_FIELDS = [
   "tool", "session", "task", "prompts", "context", "commands", "filesRead",
   "filesChanged", "testsExecuted", "result", "timestamp", "interactions", "model",
-  "cost", "specArtifacts", "validation", "operations"
+  "cost", "specArtifacts", "validation", "operations", "repositoryInventory",
+  "repositoryChanges", "repositorySpecArtifacts", "repositoryHistory", "validationCapabilities",
+  "automationEvidence", "project", "usage", "skillUsage", "promptAnalytics"
 ];
 
-const ARRAYS = new Set(["prompts", "context", "commands", "filesRead", "filesChanged", "testsExecuted", "interactions", "specArtifacts", "validation", "operations"]);
+const ARRAYS = new Set([
+  "prompts", "context", "commands", "filesRead", "filesChanged", "testsExecuted",
+  "interactions", "specArtifacts", "validation", "operations", "repositoryInventory",
+  "repositoryChanges", "repositorySpecArtifacts", "repositoryHistory", "validationCapabilities",
+  "automationEvidence", "skillUsage"
+]);
 
 function cleanArray(value) {
   if (!Array.isArray(value)) return value == null ? [] : [value];

@@ -1,4 +1,4 @@
-import { Confidence } from "./domain.js";
+import { Confidence, isKnown, known, unknown, valueOf } from "./domain.js";
 import { textFor } from "./rules/helpers.js";
 
 const workflowFamilies = [
@@ -16,13 +16,25 @@ export function detectPatterns(sessions, minimumOccurrences = 2) {
       const prompt = textFor(session, "prompts");
       return family.regex.test(prompt) ? [{ sessionId: session.id, excerpt: prompt.slice(0, 240) }] : [];
     });
-    if (examples.length >= minimumOccurrences) patterns.push({
-      pattern: family.id,
-      occurrences: examples.length,
-      examples,
-      suggestedAbstraction: family.abstraction,
-      confidence: examples.length >= 3 ? Confidence.HIGH : Confidence.MEDIUM
-    });
+    if (examples.length >= minimumOccurrences) {
+      const observedStates = sessions.flatMap((session) => {
+        const field = session.fields.automationEvidence;
+        if (!isKnown(field)) return [];
+        return valueOf(field, []).filter((item) => item?.pattern === family.id && typeof item.automated === "boolean").map((item) => item.automated);
+      });
+      const distinctStates = [...new Set(observedStates)];
+      const automationState = distinctStates.length === 1
+        ? known(distinctStates[0])
+        : unknown(distinctStates.length > 1 ? "conflicting automation evidence" : "no source reported automation state");
+      patterns.push({
+        pattern: family.id,
+        occurrences: examples.length,
+        examples,
+        suggestedAbstraction: family.abstraction,
+        automationState,
+        confidence: examples.length >= 3 ? Confidence.HIGH : Confidence.MEDIUM
+      });
+    }
   }
   return patterns;
 }

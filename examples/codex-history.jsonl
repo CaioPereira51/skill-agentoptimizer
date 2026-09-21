@@ -1,0 +1,2 @@
+{"session_id":"codex-example","ts":1789981200,"text":"Investigate the cache failure without changing code. Report the cause and evidence."}
+{"session_id":"codex-example","ts":1789981800,"text":"The diagnosis looks good. Now implement the smallest fix and run the relevant tests."}

@@ -1,18 +1,24 @@
 ---
 name: agent-optimizer
-description: Audit AI-assisted development workflows from repository evidence or exported JSON, JSONL, and Markdown sessions, producing evidence-backed metrics, findings, recommendations, history, and trends. Use when the user asks to measure prompt quality, context efficiency, validation, rework, first-pass success, spec discipline, or recurring automation opportunities.
+description: Audit AI-assisted development workflows from repository evidence, native histories, collector JSON, or OTLP traces, producing evidence-backed metrics, findings, recommendations, history, dashboards, and trends. Use when the user asks to measure prompt quality, context alignment, validation, rework, first-pass success, spec discipline, or recurring automation opportunities.
 ---
 
 # AgentOptimizer
 
-Use the repository's `agent-optimizer` CLI as the single source of analysis logic. Do not reproduce rule heuristics in the skill.
+Use the published `@caiopereira51/agentoptimizer` CLI as the single source of analysis logic. Do not reproduce rule heuristics in the skill.
 
 ## Audit
 
-Choose one observable source:
+Choose one or more observable sources. Compatible records are merged with field-level provenance:
 
-- Exported sessions: run `node bin/agent-optimizer.js audit --input <file>` for JSON, JSONL, or Markdown.
-- Repository evidence: run `node bin/agent-optimizer.js audit --repository <path>`.
+- Exported sessions: run `npx --yes @caiopereira51/agentoptimizer audit --input <file>` for JSON, JSONL, or Markdown.
+- Repository evidence: run `npx --yes @caiopereira51/agentoptimizer audit --repository <path>`.
+- Codex prompt history: run `npx --yes @caiopereira51/agentoptimizer audit --codex-history <history.jsonl> [--codex-sessions <dir>]`.
+- Claude Code transcript: run `npx --yes @caiopereira51/agentoptimizer audit --claude-transcript <transcript.jsonl>`.
+- Cursor conversation export: run `npx --yes @caiopereira51/agentoptimizer audit --cursor-export <conversations.json>`.
+- Collector interchange: run `npx --yes @caiopereira51/agentoptimizer audit --interchange <agentoptimizer.json>`.
+- External collectors: add `--howiprompt <json>`, `--ccusage <json>`, and/or `--skillusage <json>`.
+- OTLP trace file: add `--otlp <traces.json>`.
 
 Use `--json` only when structured output is needed by another step. Audits persist under `.agentoptimizer/` unless `--no-persist` is explicitly appropriate.
 
@@ -20,7 +26,9 @@ Never infer that an unknown field is negative. In particular, unknown test execu
 
 ## History and trends
 
-Run `node bin/agent-optimizer.js history` to list saved audits and `node bin/agent-optimizer.js trends` to compare the latest two. A change under three percentage points is stable by the documented methodology.
+Run `npx --yes @caiopereira51/agentoptimizer history` to list saved audits and `npx --yes @caiopereira51/agentoptimizer trends` to compare the latest two. Trends require at least three eligible samples when sample counts are available. Generate the local evidence dashboard with `dashboard --output <file>`.
+
+Use `eval --fixtures <json>` to measure rule precision, recall, and F1. Live JSON trace ingestion is explicitly opt-in through `serve-otlp`; keep the default loopback binding unless remote access is intentionally configured.
 
 ## Reporting
 

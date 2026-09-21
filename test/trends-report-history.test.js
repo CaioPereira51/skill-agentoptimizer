@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { mkdtemp, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { AgentOptimizer, FileHistoryStore, compareMetric, normalizeSession } from "../src/index.js";
+import { AgentOptimizer, FileHistoryStore, analyzeTrends, compareMetric, normalizeSession } from "../src/index.js";
 
 test("trend classification handles improvement, regression, stable and insufficient data", () => {
   assert.equal(compareMetric({ id: "prompt_quality", value: 50 }, { id: "prompt_quality", value: 60 }).status, "improvement");
@@ -41,4 +41,20 @@ test("recurring semantic workflow yields automation opportunity", () => {
   const audit = new AgentOptimizer().analyze(sessions).audit;
   assert.ok(audit.patterns.some((pattern) => pattern.pattern === "investigate-only"));
   assert.ok(audit.automationOpportunities.some((item) => item.type === "Skill"));
+  assert.equal(audit.metrics.find((item) => item.id === "automation_coverage").status, "insufficient_data");
+});
+
+test("automation coverage only uses patterns with observed automation state", () => {
+  const sessions = [
+    normalizeSession({ id: "a", prompts: ["Investigue a causa e não altere código"], automationEvidence: [{ pattern: "investigate-only", automated: true }] }),
+    normalizeSession({ id: "b", prompts: ["Apenas diagnostique; do not implement"] })
+  ];
+  const metric = new AgentOptimizer().analyze(sessions).audit.metrics.find((item) => item.id === "automation_coverage");
+  assert.deepEqual([metric.value, metric.numerator, metric.denominator], [100, 1, 1]);
+});
+
+test("legacy context metric histories compare with lexical alignment", () => {
+  const previous = { metrics: [{ id: "context_efficiency", value: 50 }] };
+  const current = { metrics: [{ id: "context_lexical_alignment", value: 60 }] };
+  assert.equal(analyzeTrends([previous, current])[0].status, "improvement");
 });

@@ -20,8 +20,17 @@ export function renderMarkdown(audit) {
   lines.push("", "## Automation Opportunities", "");
   if (!audit.automationOpportunities.length) lines.push("No recurring pattern met the minimum evidence threshold.");
   for (const item of audit.automationOpportunities) lines.push(`- ${item.type}: ${item.recommendation} (${item.confidence})`);
+  lines.push("", "## Candidate Artifacts", "");
+  if (!audit.candidateArtifacts?.length) lines.push("No pattern met the high-confidence, three-occurrence threshold.");
+  for (const item of audit.candidateArtifacts ?? []) lines.push(`- ${item.kind}: ${item.name} (${item.recurrence} occurrences, ${item.confidence})`);
+  lines.push("", "## Project Baselines", "");
+  if (!audit.projectBaselines?.length) lines.push("No project baseline observations are available.");
+  for (const item of audit.projectBaselines ?? []) lines.push(`- ${item.project}/${item.metricId}: ${item.value == null ? "insufficient_data" : `${item.value}%`} (${item.sampleSize}/${item.minimumSamples} audits)`);
   lines.push("", "## Diagnostics", "");
-  for (const item of audit.diagnostics) lines.push(`- ${item.cause} — confidence ${item.confidence}; ${item.evidence.length} evidence item(s).`);
+  for (const item of audit.diagnostics) {
+    lines.push(`- ${item.observation} — confidence ${item.confidence}; ${item.evidence.length} evidence item(s).`);
+    for (const hypothesis of item.hypotheses ?? []) lines.push(`  - Hypothesis ${hypothesis.category}: ${hypothesis.support}`);
+  }
   lines.push("", "## Confidence / Data Limitations", "");
   if (!audit.limitations.length) lines.push("No source limitations were reported.");
   for (const item of audit.limitations) lines.push(`- ${item}`);

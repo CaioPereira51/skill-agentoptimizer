@@ -1,0 +1,22 @@
+[
+  {
+    "id": "generic-prompt",
+    "origin": "synthetic",
+    "sessions": [{ "id": "generic-prompt", "prompts": ["fix it"] }],
+    "expectedFindingIds": [
+      "prompt-quality:generic-prompt:generic"
+    ]
+  },
+  {
+    "id": "well-scoped-prompt",
+    "origin": "synthetic",
+    "sessions": [{ "id": "well-scoped-prompt", "prompts": ["Implement cart validation without changing the API. Done when unit tests pass."] }],
+    "expectedFindingIds": []
+  },
+  {
+    "id": "anonymized-session-001",
+    "origin": "anonymized",
+    "sessions": [{ "id": "anonymized-session-001", "prompts": ["fix it"] }],
+    "expectedFindingIds": ["prompt-quality:anonymized-session-001:generic"]
+  }
+]

@@ -53,23 +53,23 @@ The Core must remain platform-independent. Source-specific code belongs in `src/
 
 Acceptance: a user can audit a real Codex history directly; malformed rows are visible; unsupported metrics return insufficient data rather than false zeroes.
 
-### Phase 2 — Collector interoperability
+### Phase 2 — Collector interoperability (implemented in 0.5.0)
 
-- Define a versioned `AgentOptimizer Interchange` schema for normalized conversations, tool events, validation evidence, costs, and provenance.
+- Define a versioned `AgentOptimizer Interchange` schema for normalized conversations, tool events, validation evidence, costs, and provenance. Implemented as `agentoptimizer.interchange/v1`.
 - Add import bridges for How I Prompt message exports, ccusage JSON, skillusage JSON, and OpenTelemetry/OTLP-derived session summaries where stable machine-readable contracts exist.
 - Join sources by platform, session id, project, and time window while retaining field-level provenance.
 
 Acceptance: one audit can combine prompt text, usage/cost, skill use, and tool/validation evidence without duplicating a session or weakening confidence.
 
-### Phase 3 — Stronger workflow outcome model
+### Phase 3 — Stronger workflow outcome model (implemented in 0.5.0)
 
-- Replace phrase-only outcome evidence with typed interaction events: request, clarification, correction, validation, acceptance, rollback, and abandonment.
-- Separate rework occurrence from likely cause; report prompt, context, spec, implementation, and validation as evidence-weighted hypotheses.
+- Replace phrase-only outcome evidence with typed interaction events: request, clarification, correction, validation, acceptance, rollback, and abandonment. Implemented with legacy-string compatibility.
+- Separate rework occurrence from likely cause; report prompt, context, spec, implementation, and validation as evidence-weighted hypotheses. Implemented with `SUPPORTED` and `INSUFFICIENT_DATA` states.
 - Add per-project baselines and minimum-sample guards for longitudinal metrics.
 
 Acceptance: every rework diagnosis identifies its evidence and alternative explanations; no causal claim is emitted from correlation alone.
 
-### Phase 4 — Extensible recommendation system
+### Phase 4 — Extensible recommendation system (implemented in 0.5.0)
 
 - Introduce a rule/plugin registration contract with schema validation.
 - Generate candidate Skill, Rule, Hook, or Command artifacts only after recurrence and confidence thresholds are met.
@@ -77,7 +77,7 @@ Acceptance: every rework diagnosis identifies its evidence and alternative expla
 
 Acceptance: third-party rules cannot bypass evidence requirements, and recommendation precision is measured against fixtures.
 
-### Phase 5 — Product surface
+### Phase 5 — Product surface (implemented in 0.5.0)
 
 - Add a local HTML dashboard over persisted audits.
 - Provide drill-down from metric to finding to source evidence.

@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/CaioPereira51/agentoptimizer/schemas/agentoptimizer-interchange-v1.schema.json",
+  "title": "AgentOptimizer Interchange v1",
+  "type": "object",
+  "required": ["schema", "sessions"],
+  "properties": {
+    "schema": { "const": "agentoptimizer.interchange/v1" },
+    "source": { "type": "string" },
+    "sessions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "fields"],
+        "properties": {
+          "id": { "type": ["string", "number"] },
+          "source": { "type": ["string", "object"] },
+          "fields": {
+            "type": "object",
+            "additionalProperties": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "required": ["status", "value"],
+                  "properties": {
+                    "status": { "const": "known" },
+                    "value": {},
+                    "provenance": { "type": "object" }
+                  },
+                  "additionalProperties": true
+                },
+                {
+                  "type": "object",
+                  "required": ["status"],
+                  "properties": {
+                    "status": { "enum": ["unknown", "unavailable"] },
+                    "reason": { "type": "string" },
+                    "provenance": { "type": "object" }
+                  },
+                  "additionalProperties": true
+                }
+              ]
+            }
+          },
+          "evidence": { "type": "array" }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": true
+}

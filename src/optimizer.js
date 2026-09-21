@@ -11,8 +11,10 @@ import { diagnose } from "./diagnostics.js";
 import { buildRecommendations } from "./recommendations.js";
 import { renderMarkdown } from "./report.js";
 import { analyzeTrends } from "./trends.js";
+import { groupSessionsByProject, buildProjectBaselines } from "./baselines.js";
+import { generateCandidateArtifacts } from "./artifacts.js";
 
-const defaultRules = [promptQualityRule, contextRule, taskDecompositionRule, specDisciplineRule, validationRule, reworkRule, agentEfficiencyRule];
+export const defaultRules = [promptQualityRule, contextRule, taskDecompositionRule, specDisciplineRule, validationRule, reworkRule, agentEfficiencyRule];
 
 function limitationSummary(sessions) {
   const counts = new Map();
@@ -43,8 +45,8 @@ function prioritizeByRecurrence(findings) {
 }
 
 export class AgentOptimizer {
-  constructor({ rules = defaultRules, clock = () => new Date() } = {}) {
-    this.engine = new RuleEngine(rules);
+  constructor({ rules = defaultRules, plugins = [], clock = () => new Date() } = {}) {
+    this.engine = new RuleEngine([...rules, ...plugins.flatMap((plugin) => plugin.rules)]);
     this.clock = clock;
   }
 
@@ -56,19 +58,29 @@ export class AgentOptimizer {
     const patterns = detectPatterns(sessions);
     const opportunities = automationOpportunities(patterns);
     const metrics = calculateMetrics({ sessions, findings, rework, patterns });
+    const projectMetrics = [...groupSessionsByProject(sessions)].map(([project, projectSessions]) => {
+      const projectIds = new Set(projectSessions.map((session) => session.id));
+      const projectFindings = findings.filter((finding) => finding.relatedSessions.some((id) => projectIds.has(id)));
+      const projectRework = Object.fromEntries(Object.entries(rework).filter(([id]) => projectIds.has(id)));
+      const projectPatterns = detectPatterns(projectSessions);
+      return { project, sessions: projectSessions.length, metrics: calculateMetrics({ sessions: projectSessions, findings: projectFindings, rework: projectRework, patterns: projectPatterns }) };
+    });
     const timestamp = this.clock();
     const audit = {
-      schemaVersion: 1,
+      schemaVersion: 3,
       id: timestamp.toISOString().replace(/[:.]/g, "-") ,
       createdAt: timestamp.toISOString(),
       period: auditPeriod(sessions),
       summary: { sessions: sessions.length, findings: findings.length, recommendations: 0 },
       sourceSummary: [...new Set(sessions.map((session) => `${session.source}:${session.sourceFormat}`))],
+      sessionEvidence: sessions.map((session) => ({ id: session.id, source: session.source, sourceFormat: session.sourceFormat, fields: session.fields, fieldProvenance: session.fieldProvenance ?? {}, rawEvidence: session.rawEvidence, normalizationWarnings: session.normalizationWarnings })),
       metrics,
+      projectMetrics,
       findings,
       rework,
       patterns,
       automationOpportunities: opportunities,
+      candidateArtifacts: generateCandidateArtifacts(patterns),
       diagnostics: diagnose(findings),
       recommendations: [],
       limitations: limitationSummary(sessions),
@@ -77,6 +89,7 @@ export class AgentOptimizer {
     audit.recommendations = buildRecommendations(findings, opportunities);
     audit.summary.recommendations = audit.recommendations.length;
     audit.trends = analyzeTrends([...previousAudits, audit]);
+    audit.projectBaselines = buildProjectBaselines([...previousAudits, audit]);
     return { audit, markdown: renderMarkdown(audit) };
   }
 }

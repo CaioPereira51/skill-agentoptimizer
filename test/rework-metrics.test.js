@@ -3,9 +3,9 @@ import assert from "node:assert/strict";
 import { AgentOptimizer, classifyRework, normalizeSession } from "../src/index.js";
 
 test("rework classifications cover first pass, one, multiple, and unknown", () => {
-  const first = normalizeSession({ id: "first", interactions: ["assistant: done", "user: accepted"] });
+  const first = normalizeSession({ id: "first", interactions: ["assistant: completed implementation", "user: accepted"] });
   const one = normalizeSession({ id: "one", interactions: ["assistant: done", "user: corrija", "assistant: fixed", "user: accepted"] });
-  const many = normalizeSession({ id: "many", interactions: ["user: faltou x", "user: isso quebrou", "user: accepted"] });
+  const many = normalizeSession({ id: "many", interactions: ["assistant: done", "user: faltou x", "assistant: fixed", "user: isso quebrou", "assistant: fixed again", "user: accepted"] });
   const unknown = normalizeSession({ id: "unknown" });
   assert.equal(classifyRework(first).status, "accepted_first_pass");
   assert.equal(classifyRework(one).status, "single_rework");
@@ -15,8 +15,8 @@ test("rework classifications cover first pass, one, multiple, and unknown", () =
 
 test("first-pass and rework formulas exclude unknown sessions", () => {
   const sessions = [
-    normalizeSession({ id: "first", interactions: ["accepted"] }),
-    normalizeSession({ id: "redo", interactions: ["corrija", "accepted"] }),
+    normalizeSession({ id: "first", interactions: ["assistant: done", "user: accepted"] }),
+    normalizeSession({ id: "redo", interactions: ["assistant: done", "user: corrija", "assistant: fixed", "user: accepted"] }),
     normalizeSession({ id: "unknown" })
   ];
   const audit = new AgentOptimizer({ clock: () => new Date("2026-01-01T00:00:00Z") }).analyze(sessions).audit;
@@ -28,11 +28,36 @@ test("first-pass and rework formulas exclude unknown sessions", () => {
 
 test("metrics use null instead of zero with no denominator", () => {
   const audit = new AgentOptimizer().analyze([normalizeSession({ id: "empty" })]).audit;
-  for (const id of ["prompt_quality", "context_efficiency", "validation_coverage", "first_pass_success", "rework_rate", "agent_efficiency", "automation_coverage"]) {
+  for (const id of ["prompt_quality", "context_lexical_alignment", "validation_coverage", "first_pass_success", "rework_rate", "agent_efficiency", "automation_coverage"]) {
     const metric = audit.metrics.find((item) => item.id === id);
     assert.equal(metric.value, null, id);
     assert.equal(metric.status, "insufficient_data", id);
   }
+});
+
+test("an initial correction-like request is not counted as rework", () => {
+  const classification = classifyRework(normalizeSession({ id: "initial", interactions: ["user: fix it"] }));
+  assert.equal(classification.status, "unknown");
+  assert.equal(classification.events[0].type, "request");
+});
+
+test("explicit typed interactions produce high-confidence rework", () => {
+  const classification = classifyRework(normalizeSession({ id: "typed", interactions: [
+    { type: "implementation", role: "assistant", text: "implemented" },
+    { type: "correction", role: "user", text: "change the behavior" },
+    { type: "implementation", role: "assistant", text: "updated" },
+    { type: "acceptance", role: "user", text: "approved" }
+  ] }));
+  assert.equal(classification.status, "single_rework");
+  assert.equal(classification.confidence, "HIGH");
+});
+
+test("typed correction and acceptance still require prior agent work", () => {
+  const correction = classifyRework(normalizeSession({ id: "typed-initial-correction", interactions: [{ type: "correction", role: "user", text: "fix it" }] }));
+  const acceptance = classifyRework(normalizeSession({ id: "typed-initial-acceptance", interactions: [{ type: "acceptance", role: "user", text: "accepted" }] }));
+  assert.equal(correction.status, "unknown");
+  assert.equal(correction.events[0].type, "request");
+  assert.equal(acceptance.status, "unknown");
 });
 
 test("validation coverage denominator is explicit and deterministic", () => {
