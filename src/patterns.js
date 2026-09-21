@@ -40,7 +40,7 @@ export function detectPatterns(sessions, minimumOccurrences = 2) {
 }
 
 export function automationOpportunities(patterns) {
-  return patterns.map((pattern) => ({
+  return patterns.filter((pattern) => valueOf(pattern.automationState) !== true).map((pattern) => ({
     id: `automation:${pattern.pattern}`,
     pattern: pattern.pattern,
     type: pattern.suggestedAbstraction,
@@ -48,6 +48,7 @@ export function automationOpportunities(patterns) {
     evidence: pattern.examples,
     expectedImpact: `Reduzir repetição em ${pattern.occurrences} ocorrências observadas.`,
     priority: pattern.occurrences >= 4 ? "HIGH" : "MEDIUM",
-    confidence: pattern.confidence
+    confidence: pattern.confidence,
+    verificationRequired: !isKnown(pattern.automationState)
   }));
 }

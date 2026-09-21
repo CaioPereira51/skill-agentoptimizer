@@ -6,6 +6,7 @@ import { resolve } from "node:path";
 import { AgentOptimizer } from "./optimizer.js";
 import { FileHistoryStore } from "./history.js";
 import { importOtlpTraces } from "./adapters/otlp.js";
+import { importCursorOtlp } from "./adapters/cursor-otel.js";
 
 const unzip = promisify(gunzip);
 
@@ -37,7 +38,7 @@ export async function startOtlpReceiver({
   let sequence = 0;
   const server = createServer(async (request, response) => {
     try {
-      if (request.method !== "POST" || request.url !== "/v1/traces") {
+      if (request.method !== "POST" || !["/v1/traces", "/v1/logs", "/v1/metrics"].includes(request.url)) {
         response.writeHead(404, { "content-type": "application/json" });
         return response.end(JSON.stringify({ error: "not found" }));
       }
@@ -49,10 +50,10 @@ export async function startOtlpReceiver({
       const document = JSON.parse(body.toString("utf8"));
       if (rawDir) {
         await mkdir(resolve(rawDir), { recursive: true });
-        await writeFile(resolve(rawDir, `traces-${Date.now()}-${++sequence}.json`), `${JSON.stringify(document, null, 2)}\n`, "utf8");
+        await writeFile(resolve(rawDir, `${request.url.slice(4)}-${Date.now()}-${++sequence}.json`), `${JSON.stringify(document, null, 2)}\n`, "utf8");
       }
-      const sessions = importOtlpTraces(document);
-      if (!sessions.length) throw new Error("OTLP payload contained no trace spans");
+      const sessions = request.url === "/v1/traces" ? importOtlpTraces(document) : importCursorOtlp(document);
+      if (!sessions.length) throw new Error(`OTLP payload contained no auditable ${request.url.slice(4)} records with cursor.conversation.id`);
       const previousAudits = await store.list();
       const result = optimizer.analyze(sessions, { previousAudits });
       await store.save(result.audit, result.markdown);

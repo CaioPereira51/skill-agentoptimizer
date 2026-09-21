@@ -5,6 +5,7 @@ export * from "./repository.js";
 export * from "./adapters/codex.js";
 export * from "./adapters/claude-code.js";
 export * from "./adapters/cursor.js";
+export * from "./adapters/cursor-otel.js";
 export * from "./adapters/collectors.js";
 export * from "./adapters/otlp.js";
 export * from "./otel-receiver.js";

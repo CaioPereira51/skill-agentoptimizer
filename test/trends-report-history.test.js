@@ -53,6 +53,17 @@ test("automation coverage only uses patterns with observed automation state", ()
   assert.deepEqual([metric.value, metric.numerator, metric.denominator], [100, 1, 1]);
 });
 
+test("already automated workflows do not produce duplicate automation work", () => {
+  const sessions = [
+    normalizeSession({ id: "a", prompts: ["Investigue a causa e não altere código"], automationEvidence: [{ pattern: "investigate-only", automated: true }] }),
+    normalizeSession({ id: "b", prompts: ["Apenas diagnostique; do not implement"], automationEvidence: [{ pattern: "investigate-only", automated: true }] }),
+    normalizeSession({ id: "c", prompts: ["Investigate the cause; do not implement"], automationEvidence: [{ pattern: "investigate-only", automated: true }] })
+  ];
+  const audit = new AgentOptimizer().analyze(sessions).audit;
+  assert.equal(audit.automationOpportunities.length, 0);
+  assert.equal(audit.candidateArtifacts.length, 0);
+});
+
 test("legacy context metric histories compare with lexical alignment", () => {
   const previous = { metrics: [{ id: "context_efficiency", value: 50 }] };
   const current = { metrics: [{ id: "context_lexical_alignment", value: 60 }] };

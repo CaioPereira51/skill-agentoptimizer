@@ -10,13 +10,13 @@
     "workflow-audit"
   ],
   "author": "Caio Pereira",
-  "homepage": "https://github.com/CaioPereira51/agentoptimizer#readme",
+  "homepage": "https://github.com/CaioPereira51/skill-agentoptimizer#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/CaioPereira51/agentoptimizer.git"
+    "url": "git+https://github.com/CaioPereira51/skill-agentoptimizer.git"
   },
   "bugs": {
-    "url": "https://github.com/CaioPereira51/agentoptimizer/issues"
+    "url": "https://github.com/CaioPereira51/skill-agentoptimizer/issues"
   },
   "type": "module",
   "bin": {

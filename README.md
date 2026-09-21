@@ -51,9 +51,18 @@ Consulte todos os comandos e formatos de evidência aceitos com:
 npx agent-optimizer --help
 ```
 
+O Cursor pode ser auditado a partir de um export JSON, de um transcript Markdown ou de um export OTLP de logs e métricas:
+
+```bash
+npx agent-optimizer audit --cursor-transcript chat.md
+npx agent-optimizer audit --cursor-otel cursor-otel.json
+```
+
 ### Referências
 
-O projeto se inspira em ferramentas e pesquisas do ecossistema de agentes, incluindo [session-report](https://github.com/cline/skills), [How I Prompt](https://github.com/eeshansrivastava89/howiprompt), [skillusage](https://github.com/UCSB-NLP-Chang/Skill-Usage), [ccusage](https://github.com/ccusage/ccusage) e [OpenLIT](https://github.com/openlit/openlit).
+O projeto se inspira em ferramentas e pesquisas do ecossistema de agentes, incluindo [session-report](https://github.com/anthropics/claude-plugins-official/blob/main/plugins/session-report/skills/session-report/SKILL.md), [How I Prompt](https://github.com/eeshansrivastava89/howiprompt), [skillusage](https://github.com/lovstudio/skillusage), [ccusage](https://github.com/ccusage/ccusage) e [OpenLIT](https://github.com/openlit/openlit).
+
+> **Segurança:** `--plugin` executa JavaScript local arbitrário no processo do AgentOptimizer. Carregue apenas plugins nos quais você confia.
 
 ---
 
@@ -94,6 +103,15 @@ See all commands and supported evidence formats:
 npx agent-optimizer --help
 ```
 
+Cursor can be audited from a JSON export, a Markdown transcript, or an OTLP logs-and-metrics export:
+
+```bash
+npx agent-optimizer audit --cursor-transcript chat.md
+npx agent-optimizer audit --cursor-otel cursor-otel.json
+```
+
 ### References
 
-The project draws on tools and research from the agent ecosystem, including [session-report](https://github.com/cline/skills), [How I Prompt](https://github.com/eeshansrivastava89/howiprompt), [skillusage](https://github.com/UCSB-NLP-Chang/Skill-Usage), [ccusage](https://github.com/ccusage/ccusage), and [OpenLIT](https://github.com/openlit/openlit).
+The project draws on tools and research from the agent ecosystem, including [session-report](https://github.com/anthropics/claude-plugins-official/blob/main/plugins/session-report/skills/session-report/SKILL.md), [How I Prompt](https://github.com/eeshansrivastava89/howiprompt), [skillusage](https://github.com/lovstudio/skillusage), [ccusage](https://github.com/ccusage/ccusage), and [OpenLIT](https://github.com/openlit/openlit).
+
+> **Security:** `--plugin` executes arbitrary local JavaScript in the AgentOptimizer process. Load only plugins you trust.

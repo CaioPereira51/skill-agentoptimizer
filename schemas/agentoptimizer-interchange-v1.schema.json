@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/CaioPereira51/agentoptimizer/schemas/agentoptimizer-interchange-v1.schema.json",
+  "$id": "https://github.com/CaioPereira51/skill-agentoptimizer/schemas/agentoptimizer-interchange-v1.schema.json",
   "title": "AgentOptimizer Interchange v1",
   "type": "object",
   "required": ["schema", "sessions"],

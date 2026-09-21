@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { importClaudeCodeTranscript, importCursorExport, valueOf } from "../src/index.js";
+import { importClaudeCodeTranscript, importCursorExport, importCursorTranscript, valueOf } from "../src/index.js";
 
 test("Claude Code transcript captures ordered messages and observed tool evidence", () => {
   const transcript = [
@@ -29,4 +29,12 @@ test("Cursor export captures conversation but keeps tool evidence unavailable", 
   assert.equal(valueOf(session.fields.interactions).length, 2);
   assert.equal(session.fields.filesRead.status, "unavailable");
   assert.equal(session.fields.testsExecuted.status, "unavailable");
+});
+
+test("Cursor Markdown transcript captures only explicit conversation messages", () => {
+  const [session] = importCursorTranscript("# User\nReview the API\n\n# Assistant\nI reviewed it.", { source: "chat.md" });
+  assert.deepEqual(valueOf(session.fields.prompts), ["Review the API"]);
+  assert.equal(valueOf(session.fields.interactions).length, 2);
+  assert.equal(session.fields.filesRead.status, "unavailable");
+  assert.equal(session.sourceFormat, "cursor-transcript-markdown");
 });

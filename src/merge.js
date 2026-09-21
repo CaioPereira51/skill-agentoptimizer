@@ -12,10 +12,10 @@ function canonicalTool(session) {
   return TOOL_ALIASES.get(tool) ?? tool;
 }
 
-function timeBucket(session, windowMs) {
+function timestampValue(session) {
   const timestamp = valueOf(session.fields.timestamp);
   const value = timestamp == null ? NaN : new Date(timestamp).valueOf();
-  return Number.isNaN(value) ? null : Math.floor(value / windowMs);
+  return Number.isNaN(value) ? null : value;
 }
 
 function identityKey(session, windowMs) {
@@ -23,16 +23,16 @@ function identityKey(session, windowMs) {
   const sessionId = valueOf(session.fields.session);
   if (sessionId != null && String(sessionId).trim()) return `${tool}:session:${String(sessionId).trim()}`;
   const project = valueOf(session.fields.project);
-  const bucket = timeBucket(session, windowMs);
-  if (project != null && bucket != null) return `${tool}:project:${String(project)}:time:${bucket}`;
+  const timestamp = timestampValue(session);
+  if (project != null && timestamp != null) return `${tool}:project:${String(project)}:time:${timestamp}`;
   return `unique:${session.source}:${session.id}`;
 }
 
-function projectTimeKey(session, windowMs) {
+function projectTimeKey(session) {
   const project = valueOf(session.fields.project);
-  const bucket = timeBucket(session, windowMs);
-  if (project == null || bucket == null) return null;
-  return `${canonicalTool(session)}:project:${String(project)}:time:${bucket}`;
+  const timestamp = timestampValue(session);
+  if (project == null || timestamp == null) return null;
+  return { tool: canonicalTool(session), project: String(project), timestamp };
 }
 
 function uniqueArray(values) {
@@ -79,7 +79,7 @@ function mergeGroup(group, key) {
 export function mergeSessions(sessions, { timeWindowMs = 5 * 60 * 1000 } = {}) {
   if (!Array.isArray(sessions)) throw new TypeError("mergeSessions expects an array");
   const groups = new Map();
-  const projectTimeToSessionGroups = new Map();
+  const sessionGroupsByProject = [];
   const withoutSessionId = [];
   for (const session of sessions) {
     const sessionId = valueOf(session.fields.session);
@@ -87,15 +87,16 @@ export function mergeSessions(sessions, { timeWindowMs = 5 * 60 * 1000 } = {}) {
     const key = identityKey(session, timeWindowMs);
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key).push(session);
-    const projectTime = projectTimeKey(session, timeWindowMs);
+    const projectTime = projectTimeKey(session);
     if (projectTime) {
-      if (!projectTimeToSessionGroups.has(projectTime)) projectTimeToSessionGroups.set(projectTime, new Set());
-      projectTimeToSessionGroups.get(projectTime).add(key);
+      sessionGroupsByProject.push({ ...projectTime, key });
     }
   }
   for (const session of withoutSessionId) {
-    const projectTime = projectTimeKey(session, timeWindowMs);
-    const candidates = projectTime ? [...(projectTimeToSessionGroups.get(projectTime) ?? [])] : [];
+    const projectTime = projectTimeKey(session);
+    const candidates = projectTime ? [...new Set(sessionGroupsByProject
+      .filter((candidate) => candidate.tool === projectTime.tool && candidate.project === projectTime.project && Math.abs(candidate.timestamp - projectTime.timestamp) <= timeWindowMs)
+      .map((candidate) => candidate.key))] : [];
     const key = candidates.length === 1 ? candidates[0] : identityKey(session, timeWindowMs);
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key).push(session);

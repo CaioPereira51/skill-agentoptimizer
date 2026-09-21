@@ -85,6 +85,17 @@ Acceptance: third-party rules cannot bypass evidence requirements, and recommend
 
 Acceptance: every chart value is traceable to normalized sessions and source locations; local operation remains the default.
 
+### Phase 6 — Publication hardening (implemented locally, pending release)
+
+- Keep public GitHub metadata aligned with the existing `CaioPereira51/skill-agentoptimizer` remote while preserving the npm package name `@caiopereira51/agentoptimizer`.
+- Support Cursor Markdown transcripts and Cursor OTLP logs/metrics without treating either as complete traces or model context.
+- Exclude workflows with explicit `automationState: known(true)` from automation opportunities and candidate artifacts.
+- Merge evidence by actual timestamp distance, avoiding fixed-window boundary splits.
+- Expand labeled evaluation coverage across Portuguese and English prompts, scoped tasks, corrections, clarification, and unknown evidence states.
+- Warn that Node plugin modules execute with local process privileges.
+
+Acceptance: public instructions run as written; source formats retain their evidence limits; and the full verification pipeline plus the labeled evaluation harness pass.
+
 ## Integration policy
 
 - Reuse stable outputs and public contracts before copying parser code.

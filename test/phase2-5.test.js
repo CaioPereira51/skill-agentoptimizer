@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
   AgentOptimizer, RuleEngine, evaluateFixtures, generateDashboard, importCcusage, importHowIPrompt,
-  importOtlpTraces, importSkillusage, loadRulePlugin, mergeSessions, normalizeSession, startOtlpReceiver
+  importCursorOtlp, importOtlpTraces, importSkillusage, loadRulePlugin, mergeSessions, normalizeSession, startOtlpReceiver
 } from "../src/index.js";
 
 const otlp = {
@@ -46,6 +46,35 @@ test("OTLP JSON imports instrumented evidence conservatively", () => {
   assert.deepEqual(session.fields.testsExecuted.value, ["npm test"]);
   assert.equal(session.fields.model.status, "unavailable");
   assert.match(session.rawEvidence[0].location, /trace:/);
+});
+
+test("Cursor OTLP logs and metrics require a conversation id and retain partial observability", () => {
+  const document = { resourceLogs: [{ resource: { attributes: [{ key: "service.name", value: { stringValue: "cursor" } }] }, scopeLogs: [{ logRecords: [{ timeUnixNano: "1767225600000000000", body: { stringValue: "skill.activated" }, attributes: [{ key: "cursor.conversation.id", value: { stringValue: "cursor-1" } }, { key: "skill.activated", value: { boolValue: true } }] }] }] }] };
+  const [session] = importCursorOtlp(document);
+  assert.equal(session.fields.session.value, "cursor-1");
+  assert.equal(session.fields.prompts.status, "unavailable");
+  assert.equal(session.fields.automationEvidence.value[0].automated, true);
+  assert.equal(session.sourceFormat, "cursor-otlp-logs-metrics");
+});
+
+test("Cursor OTLP metric values retain token and cost evidence", () => {
+  const document = { resourceMetrics: [{ scopeMetrics: [{ metrics: [
+    { name: "cursor.token.usage.input", sum: { dataPoints: [{ asInt: "12", attributes: [{ key: "cursor.conversation.id", value: { stringValue: "cursor-2" } }] }] } },
+    { name: "cursor.cost.usage", gauge: { dataPoints: [{ asDouble: 0.25, attributes: [{ key: "cursor.conversation.id", value: { stringValue: "cursor-2" } }] }] } }
+  ] }] }] };
+  const [session] = importCursorOtlp(document);
+  assert.equal(session.fields.usage.value.inputTokens, 12);
+  assert.equal(session.fields.cost.value.amount, 0.25);
+});
+
+test("time-window merge joins adjacent timestamps rather than fixed buckets", () => {
+  const sessions = [
+    normalizeSession({ id: "identified", tool: "codex", session: "s1", project: "demo", timestamp: "2026-01-01T10:04:59Z", prompts: ["Review this"] }),
+    normalizeSession({ id: "unidentified", tool: "codex", project: "demo", timestamp: "2026-01-01T10:05:01Z", usage: { inputTokens: 4 } })
+  ];
+  const [merged] = mergeSessions(sessions);
+  assert.equal(merged.fields.session.value, "s1");
+  assert.equal(merged.fields.usage.value.inputTokens, 4);
 });
 
 test("live OTLP receiver persists an auditable trace", async () => {

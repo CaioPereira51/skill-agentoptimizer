@@ -54,3 +54,60 @@ export function importCursorExport(input, options = {}) {
     }
   });
 }
+
+function transcriptMessages(markdown) {
+  const lines = String(markdown).replace(/\r\n/g, "\n").split("\n");
+  const messages = [];
+  let current;
+  const heading = /^(?:#{1,6}\s*)?(user|you|assistant|cursor|ai)\s*:?\s*$/i;
+  const inline = /^(?:\*\*)?(user|you|assistant|cursor|ai)(?:\*\*)?\s*:\s*(.*)$/i;
+  const flush = () => {
+    if (!current) return;
+    const text = current.lines.join("\n").trim();
+    if (text) messages.push({ role: /^(user|you)$/i.test(current.role) ? "user" : "assistant", text });
+    current = undefined;
+  };
+  for (const line of lines) {
+    const inlineMatch = line.match(inline);
+    const headingMatch = line.match(heading);
+    if (inlineMatch || headingMatch) {
+      flush();
+      const match = inlineMatch ?? headingMatch;
+      current = { role: match[1], lines: inlineMatch && match[2] ? [match[2]] : [] };
+    } else if (current) current.lines.push(line);
+  }
+  flush();
+  return messages;
+}
+
+export function importCursorTranscript(input, options = {}) {
+  const interactions = transcriptMessages(input);
+  if (!interactions.length) throw new Error("Cursor Markdown transcript contains no recognizable User/Assistant messages");
+  const prompts = interactions.filter((message) => message.role === "user").map((message) => message.text);
+  const sessionId = options.sessionId ?? "transcript";
+  return normalizeMany([{
+    id: `cursor:${sessionId}`,
+    tool: "cursor",
+    session: String(sessionId),
+    task: prompts[0],
+    prompts,
+    interactions,
+    observability: {
+      context: "unavailable", commands: "unavailable", filesRead: "unavailable", filesChanged: "unavailable",
+      testsExecuted: "unavailable", result: "unavailable", cost: "unavailable", specArtifacts: "unavailable",
+      validation: "unavailable", operations: "unavailable", timestamp: "unavailable"
+    },
+    evidence: [{ type: "cursor-transcript", location: options.source ?? "input" }]
+  }], {
+    source: options.source ?? "cursor",
+    format: "cursor-transcript-markdown",
+    limitations: {
+      context: "Cursor transcript does not prove complete model context.",
+      commands: "Tool activity is unavailable in a Markdown transcript.",
+      filesRead: "File reads are unavailable in a Markdown transcript.",
+      filesChanged: "File changes are unavailable in a Markdown transcript.",
+      testsExecuted: "Validation execution is unavailable in a Markdown transcript.",
+      result: "No outcome is inferred from transcript order."
+    }
+  });
+}

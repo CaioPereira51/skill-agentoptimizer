@@ -2,7 +2,7 @@
 import { readFile } from "node:fs/promises";
 import { extname, resolve } from "node:path";
 import process from "node:process";
-import { AgentOptimizer, FileHistoryStore, analyzeTrends, collectRepositorySession, evaluateFixtures, importCcusage, importClaudeCodeTranscript, importCodexHistory, importCursorExport, importHowIPrompt, importInterchange, importOtlpTraces, importSkillusage, importText, loadCodexSessionModels, loadRulePlugin, mergeSessions, startOtlpReceiver, writeDashboard } from "../src/index.js";
+import { AgentOptimizer, FileHistoryStore, analyzeTrends, collectRepositorySession, evaluateFixtures, importCcusage, importClaudeCodeTranscript, importCodexHistory, importCursorExport, importCursorOtlp, importCursorTranscript, importHowIPrompt, importInterchange, importOtlpTraces, importSkillusage, importText, loadCodexSessionModels, loadRulePlugin, mergeSessions, startOtlpReceiver, writeDashboard } from "../src/index.js";
 
 function usage() {
   return `AgentOptimizer
@@ -14,12 +14,16 @@ Usage:
   agent-optimizer audit --interchange <agentoptimizer.json> [--history <dir>] [--json]
   agent-optimizer audit --claude-transcript <transcript.jsonl> [--history <dir>] [--json]
   agent-optimizer audit --cursor-export <conversations.json> [--history <dir>] [--json]
+  agent-optimizer audit --cursor-transcript <chat.md> [--history <dir>] [--json]
+  agent-optimizer audit --cursor-otel <logs-and-metrics.json> [--history <dir>] [--json]
   agent-optimizer audit --ccusage <report.json> --howiprompt <metrics.json> --skillusage <report.json> --otlp <traces.json> [--plugin <module.js>]
   agent-optimizer history [--history <dir>]
   agent-optimizer trends [--history <dir>] [--json]
   agent-optimizer dashboard [--history <dir>] [--output <dashboard.html>]
   agent-optimizer eval --fixtures <fixtures.json> [--plugin <module.js>] [--json]
   agent-optimizer serve-otlp [--host 127.0.0.1] [--port 4318] [--history <dir>] [--raw-dir <dir>]
+
+Security: --plugin executes arbitrary local JavaScript. Load only plugins you trust.
 `;
 }
 
@@ -63,6 +67,14 @@ async function auditCommand(args) {
   if (args["cursor-export"]) {
     const file = resolve(args["cursor-export"]);
     collected.push(...importCursorExport(await readFile(file, "utf8"), { source: file }));
+  }
+  if (args["cursor-transcript"]) {
+    const file = resolve(args["cursor-transcript"]);
+    collected.push(...importCursorTranscript(await readFile(file, "utf8"), { source: file }));
+  }
+  if (args["cursor-otel"]) {
+    const file = resolve(args["cursor-otel"]);
+    collected.push(...importCursorOtlp(await readFile(file, "utf8"), { source: file }));
   }
   if (args.ccusage) {
     const file = resolve(args.ccusage);
