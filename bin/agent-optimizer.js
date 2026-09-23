@@ -2,7 +2,7 @@
 import { readFile } from "node:fs/promises";
 import { extname, resolve } from "node:path";
 import process from "node:process";
-import { AgentOptimizer, FileHistoryStore, analyzeTrends, collectRepositorySession, evaluateFixtures, importCcusage, importClaudeCodeTranscript, importCodexHistory, importCursorExport, importCursorOtlp, importCursorTranscript, importHowIPrompt, importInterchange, importOtlpTraces, importSkillusage, importText, loadCodexSessionModels, loadRulePlugin, mergeSessions, startOtlpReceiver, writeDashboard } from "../src/index.js";
+import { AgentOptimizer, FileHistoryStore, analyzeTrends, collectRepositorySession, evaluateFixtures, findCodexHistoryPath, findCodexSessionsPath, importCcusage, importClaudeCodeTranscript, importCodexHistory, importCodexSessions, importCursorExport, importCursorOtlp, importCursorTranscript, importHowIPrompt, importInterchange, importOtlpTraces, importSkillusage, importText, loadCodexSessionModels, loadRulePlugin, mergeSessions, renderCoachingReport, startOtlpReceiver, writeDashboard } from "../src/index.js";
 
 function usage() {
   return `AgentOptimizer
@@ -11,6 +11,8 @@ Usage:
   agent-optimizer audit --input <sessions.json|jsonl|md> [--history <dir>] [--no-persist] [--json]
   agent-optimizer audit --repository [path] [--history <dir>] [--json]
   agent-optimizer audit --codex-history <history.jsonl> [--codex-sessions <dir>] [--history <dir>] [--json]
+  agent-optimizer coach --codex [--codex-sessions <dir>] [--history <dir>] [--json]
+  agent-optimizer coach --codex-history <history.jsonl> [--history <dir>] [--json]
   agent-optimizer audit --interchange <agentoptimizer.json> [--history <dir>] [--json]
   agent-optimizer audit --claude-transcript <transcript.jsonl> [--history <dir>] [--json]
   agent-optimizer audit --cursor-export <conversations.json> [--history <dir>] [--json]
@@ -33,7 +35,7 @@ function parseArgs(argv) {
     const item = argv[index];
     if (!item.startsWith("--")) { args._.push(item); continue; }
     const key = item.slice(2);
-    if (["json", "no-persist"].includes(key)) args[key] = true;
+    if (["json", "no-persist", "codex"].includes(key)) args[key] = true;
     else if (key === "repository") {
       const next = argv[index + 1];
       args.repository = next && !next.startsWith("--") ? argv[++index] : ".";
@@ -46,16 +48,20 @@ function parseArgs(argv) {
   return args;
 }
 
-async function auditCommand(args) {
+async function auditCommand(args, { coaching = false } = {}) {
   const store = new FileHistoryStore(args.history ?? ".agentoptimizer");
   const previousAudits = await store.list();
   const collected = [];
   if (args.repository) collected.push(await collectRepositorySession(args.repository));
-  if (args["codex-history"]) {
-    const file = resolve(args["codex-history"]);
+  const codexHistory = args["codex-history"] ?? (args.codex ? await findCodexHistoryPath() : undefined);
+  const codexSessions = args["codex-sessions"] ?? (args.codex && !codexHistory ? await findCodexSessionsPath() : undefined);
+  if (args.codex && !codexHistory && !codexSessions) throw new Error("Codex history was not found. Provide --codex-history <history.jsonl> or --codex-sessions <directory> instead.");
+  if (codexHistory) {
+    const file = resolve(codexHistory);
     const models = await loadCodexSessionModels(args["codex-sessions"]);
     collected.push(...importCodexHistory(await readFile(file, "utf8"), { source: file, models }));
   }
+  if (codexSessions) collected.push(...await importCodexSessions(codexSessions));
   if (args.interchange) {
     const file = resolve(args.interchange);
     collected.push(...importInterchange(await readFile(file, "utf8")));
@@ -103,7 +109,8 @@ async function auditCommand(args) {
   const plugins = await Promise.all((args.plugin ?? []).map((file) => loadRulePlugin(resolve(file))));
   const result = new AgentOptimizer({ plugins }).analyze(sessions, { previousAudits });
   if (!args["no-persist"]) await store.save(result.audit, result.markdown);
-  process.stdout.write(args.json ? `${JSON.stringify(result.audit, null, 2)}\n` : result.markdown);
+  const output = coaching ? renderCoachingReport(result.audit, sessions) : result.markdown;
+  process.stdout.write(args.json ? `${JSON.stringify(result.audit, null, 2)}\n` : output);
 }
 
 async function main() {
@@ -112,6 +119,10 @@ async function main() {
   const store = new FileHistoryStore(args.history ?? ".agentoptimizer");
   if (["help", "--help", "-h"].includes(command)) return process.stdout.write(usage());
   if (command === "audit") return auditCommand(args);
+  if (command === "coach") {
+    if (!args.codex && !args["codex-history"]) throw new Error("coach requires --codex (explicit local-history consent) or --codex-history <history.jsonl>");
+    return auditCommand(args, { coaching: true });
+  }
   if (command === "history") {
     const audits = await store.list();
     return process.stdout.write(`${audits.map((audit) => `${audit.id}\t${audit.createdAt}\t${audit.summary.sessions} sessions`).join("\n")}${audits.length ? "\n" : ""}`);

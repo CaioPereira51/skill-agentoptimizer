@@ -107,8 +107,12 @@ test("live Cursor OTLP buffers logs and metrics by conversation before auditing"
     const headers = { "content-type": "application/json" };
     assert.equal((await fetch(`${receiver.url}/v1/logs`, { method: "POST", headers, body: JSON.stringify(logs) })).status, 202);
     assert.equal((await fetch(`${receiver.url}/v1/metrics`, { method: "POST", headers, body: JSON.stringify(metrics) })).status, 202);
-    await new Promise((resolve) => setTimeout(resolve, 60));
-    const audits = await new (await import("../src/history.js")).FileHistoryStore(root).list();
+    const store = new (await import("../src/history.js")).FileHistoryStore(root);
+    let audits = [];
+    for (let attempt = 0; attempt < 20 && audits.length === 0; attempt += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 25));
+      audits = await store.list();
+    }
     assert.equal(audits.length, 1);
     assert.equal(audits[0].sessionEvidence[0].fields.usage.value.inputTokens, 9);
   } finally { await receiver.close(); }

@@ -58,6 +58,14 @@ npx agent-optimizer audit --cursor-transcript chat.md
 npx agent-optimizer audit --cursor-otel cursor-otel.json
 ```
 
+Para receber coaching sobre seus prompts ao longo do tempo, com consentimento explícito para ler o histórico local do Codex:
+
+```bash
+npx agent-optimizer coach --codex
+```
+
+O modo `coach` salva cada relatório em `.agentoptimizer/` para comparar execuções futuras. Ele descobre o histórico de prompts ou os logs locais de sessão do Codex; o relatório continua declarando quais campos a fonte não consegue provar.
+
 ### Referências
 
 O projeto se inspira em ferramentas e pesquisas do ecossistema de agentes, incluindo [session-report](https://github.com/anthropics/claude-plugins-official/blob/main/plugins/session-report/skills/session-report/SKILL.md), [How I Prompt](https://github.com/eeshansrivastava89/howiprompt), [skillusage](https://github.com/lovstudio/skillusage), [ccusage](https://github.com/ccusage/ccusage) e [OpenLIT](https://github.com/openlit/openlit).
@@ -109,6 +117,14 @@ Cursor can be audited from a JSON export, a Markdown transcript, or an OTLP logs
 npx agent-optimizer audit --cursor-transcript chat.md
 npx agent-optimizer audit --cursor-otel cursor-otel.json
 ```
+
+For longitudinal coaching on your prompting, with explicit consent to read local Codex history:
+
+```bash
+npx agent-optimizer coach --codex
+```
+
+`coach` saves every report under `.agentoptimizer/` so later runs can be compared. It discovers Codex prompt history or local session logs and still states which fields the source cannot prove.
 
 ### References
 

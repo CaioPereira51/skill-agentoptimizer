@@ -1,6 +1,6 @@
 ---
 name: agent-optimizer
-description: Audit AI-assisted development workflows from repository evidence, native histories, collector JSON, Cursor transcripts, or OTLP telemetry, producing evidence-backed metrics, findings, recommendations, history, dashboards, and trends. Use when the user asks to measure prompt quality, context alignment, validation, rework, first-pass success, spec discipline, or recurring automation opportunities.
+description: Audit AI-assisted development workflows and provide longitudinal coaching from explicitly approved local histories, repository evidence, collector JSON, Cursor transcripts, or OTLP telemetry. Use whenever the user asks to improve how they prompt or work with an AI coding agent, review conversation/history habits, measure prompt quality, context alignment, validation, rework, first-pass success, spec discipline, or recurring automation opportunities.
 ---
 
 # AgentOptimizer
@@ -25,6 +25,12 @@ Choose one or more observable sources. Compatible records are merged with field-
 Use `--json` only when structured output is needed by another step. Audits persist under `.agentoptimizer/` unless `--no-persist` is explicitly appropriate.
 
 Never infer that an unknown field is negative. In particular, unknown test execution is not equivalent to no tests. Preserve confidence and data limitations from the generated audit.
+
+## Personal coaching from conversation history
+
+When the user asks for feedback on their own prompting or conversation habits, ask for consent to inspect local history if it has not already been given in the request. After consent, run `npx --yes @caiopereira51/agentoptimizer coach --codex`. This explicitly opts into discovery of the local Codex history or Desktop session logs and persists a baseline under `.agentoptimizer/`.
+
+Use `coach --codex-history <history.jsonl>` or `coach --codex-sessions <directory>` when the user provides a specific source. The coaching report is prompt-focused even when a session log supplies visible assistant messages and tool calls: say plainly what the chosen source cannot prove. Do not claim continuous observation; re-run coaching when the user requests it or configure a separate, user-approved scheduled task.
 
 ## History and trends
 

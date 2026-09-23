@@ -21,6 +21,34 @@ test("CLI audits Codex history without persistence", async () => {
   assert.equal(JSON.parse(result.stdout).sourceSummary[0], `${file}:codex-history-jsonl`);
 });
 
+test("CLI coaching produces a prompt-based report and persists a baseline", async () => {
+  const root = await mkdtemp(join(tmpdir(), "agent-optimizer-coach-"));
+  const file = join(root, "history.jsonl");
+  const history = join(root, "audits");
+  await writeFile(file, [
+    { session_id: "one", ts: 10, text: "fix it" },
+    { session_id: "two", ts: 20, text: "update it" },
+    { session_id: "three", ts: 30, text: "review it" }
+  ].map(JSON.stringify).join("\n"), "utf8");
+  const result = run(["coach", "--codex-history", file, "--history", history]);
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /Coaching Report/);
+  assert.match(result.stdout, /focuses on observable user prompts/);
+  const files = await (await import("node:fs/promises")).readdir(join(history, "audits"));
+  assert.ok(files.some((name) => name.endsWith(".json")));
+});
+
+test("CLI coaching requires an explicit history source", () => {
+  const result = run(["coach", "--no-persist"]);
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /explicit local-history consent/);
+});
+
+test("CLI parses --codex as an explicit boolean source selection", () => {
+  const result = run(["coach", "--codex", "--no-persist"]);
+  assert.doesNotMatch(result.stderr, /requires --codex/);
+});
+
 test("CLI audits interchange documents", async () => {
   const root = await mkdtemp(join(tmpdir(), "agent-optimizer-cli-"));
   const file = join(root, "interchange.json");

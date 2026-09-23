@@ -21,6 +21,7 @@ export * from "./history.js";
 export * from "./metrics.js";
 export * from "./trends.js";
 export * from "./report.js";
+export * from "./coach.js";
 export * from "./rework.js";
 export * from "./patterns.js";
 export * from "./rules/engine.js";

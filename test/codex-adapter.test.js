@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { mkdtemp, mkdir, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { importCodexHistory, loadCodexSessionModels, parseCodexHistory, valueOf } from "../src/index.js";
+import { importCodexHistory, importCodexSessionTranscript, loadCodexSessionModels, parseCodexHistory, valueOf } from "../src/index.js";
 
 test("Codex history groups and orders prompts by session", () => {
   const text = [
@@ -38,4 +38,18 @@ test("Codex session metadata enriches imported model information", async () => {
   const models = await loadCodexSessionModels(root);
   const [session] = importCodexHistory(JSON.stringify({ session_id: "abc", ts: 10, text: "Audit this" }), { models });
   assert.equal(valueOf(session.fields.model), "gpt-5");
+});
+
+test("Codex Desktop session transcript retains observable conversation and tool events", () => {
+  const transcript = [
+    { type: "session_meta", payload: { id: "desktop-1", timestamp: "2026-09-23T00:00:00Z", cwd: "C:/demo" } },
+    { type: "response_item", payload: { type: "message", role: "user", content: [{ type: "input_text", text: "<environment_context>internal</environment_context>" }] } },
+    { type: "response_item", payload: { type: "message", role: "user", content: [{ type: "input_text", text: "Fix the parser. Done when tests pass." }] } },
+    { type: "response_item", payload: { type: "function_call", name: "exec_command" } },
+    { type: "response_item", payload: { type: "message", role: "assistant", content: [{ type: "output_text", text: "I fixed it." }] } }
+  ].map(JSON.stringify).join("\n");
+  const [session] = importCodexSessionTranscript(transcript, { source: "desktop.jsonl" });
+  assert.deepEqual(valueOf(session.fields.prompts), ["Fix the parser. Done when tests pass."]);
+  assert.equal(valueOf(session.fields.interactions).length, 2);
+  assert.deepEqual(valueOf(session.fields.operations), ["tool:exec_command"]);
 });
