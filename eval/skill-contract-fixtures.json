@@ -1,0 +1,59 @@
+[
+  {
+    "id": "repository-audit",
+    "prompt": "Audite este repositório e mostre os principais riscos do meu fluxo com agentes.",
+    "expected": {
+      "command": "audit --repository <path>",
+      "requiresConsent": false,
+      "mustPreserve": ["evidence", "limitations", "confidence"]
+    }
+  },
+  {
+    "id": "codex-coaching-consent",
+    "prompt": "Analise meus prompts do Codex e diga como posso melhorar.",
+    "expected": {
+      "command": "coach --codex",
+      "requiresConsent": true,
+      "mustPreserve": ["source limitations", "prompt-focused scope"]
+    }
+  },
+  {
+    "id": "longitudinal-trends",
+    "prompt": "Compare minhas últimas auditorias e mostre a tendência dos indicadores.",
+    "expected": {
+      "command": "trends",
+      "requiresConsent": false,
+      "mustPreserve": ["sample sufficiency", "insufficient-data status"]
+    }
+  },
+  {
+    "id": "incomplete-session",
+    "prompt": "Audite esta sessão incompleta e diga o que dá para concluir.",
+    "expected": {
+      "command": "audit --input <file>",
+      "requiresConsent": false,
+      "mustPreserve": ["limitations", "unknown-versus-empty distinction"],
+      "mustNot": ["invent evidence"]
+    }
+  },
+  {
+    "id": "cli-or-input-failure",
+    "prompt": "Audite o arquivo de sessão que enviei.",
+    "failureSetup": "CLI returns an error or the file is missing/invalid",
+    "expected": {
+      "command": "audit --input <file>",
+      "requiresConsent": false,
+      "mustPreserve": ["concrete error", "corrective action"],
+      "mustNot": ["fabricated report", "silent fallback"]
+    }
+  },
+  {
+    "id": "continuous-audit-request",
+    "prompt": "Configure uma auditoria contínua do meu fluxo de agentes.",
+    "expected": {
+      "command": "recommend serve-otlp or an automation; do not execute",
+      "requiresConsent": true,
+      "mustPreserve": ["explicit authorization before external state change"]
+    }
+  }
+]
